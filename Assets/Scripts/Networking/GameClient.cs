@@ -18,7 +18,6 @@ public class GameClient : MonoBehaviour
     private TcpClient client;
     private NetworkStream stream;
     private StreamReader reader;
-    private Thread receiveThread;
     private volatile bool isConnected;
 
     /// <summary>
@@ -50,27 +49,31 @@ public class GameClient : MonoBehaviour
     /// <param name="port">The server port.</param>
     public void ConnectToServer(string ip, int port)
     {
-        try
-        {
-            client = new TcpClient();
-            client.Connect(ip, port);
-            stream = client.GetStream();
-            reader = new StreamReader(stream, Encoding.UTF8);
-            isConnected = true;
+        client = new TcpClient();
 
-            receiveThread = new Thread(ReceiveMessages)
+        // Connect on a background thread to avoid blocking Unity's main thread
+        Thread connectThread = new Thread(() =>
+        {
+            try
             {
-                IsBackground = true
-            };
-            receiveThread.Start();
+                client.Connect(ip, port);
+                stream = client.GetStream();
+                reader = new StreamReader(stream, Encoding.UTF8);
+                isConnected = true;
 
-            Debug.Log($"[GameClient] Connected to server at {ip}:{port}");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[GameClient] Failed to connect to {ip}:{port} — {e.Message}");
-            isConnected = false;
-        }
+                Debug.Log($"[GameClient] Connected to server at {ip}:{port}");
+
+                // Start receiving messages on this thread
+                ReceiveMessages();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GameClient] Failed to connect to {ip}:{port} — {e.Message}");
+                isConnected = false;
+            }
+        })
+        { IsBackground = true };
+        connectThread.Start();
     }
 
     /// <summary>

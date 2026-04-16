@@ -35,6 +35,8 @@ public class GameServer : MonoBehaviour
     private Thread listenThread;
     private volatile bool isRunning;
 
+    private int nextPlayerId = 1;
+
     private const int MaxPlayers = 2;
 
     /// <summary>The current state of the game.</summary>
@@ -130,7 +132,7 @@ public class GameServer : MonoBehaviour
                         continue;
                     }
 
-                    int playerId = connectedClients.Count + 1;
+                    int playerId = nextPlayerId++;
                     connectedClients.Add(client);
                     clientPlayerIds[client] = playerId;
 
@@ -179,7 +181,13 @@ public class GameServer : MonoBehaviour
     /// <param name="client">The connected TcpClient.</param>
     private void HandleClient(TcpClient client)
     {
-        int playerId = clientPlayerIds[client];
+        if (!clientPlayerIds.TryGetValue(client, out int playerId))
+        {
+            Debug.LogError("[GameServer] Unknown client connected. Closing.");
+            client.Close();
+            return;
+        }
+
         NetworkStream stream = client.GetStream();
         StreamReader reader = new StreamReader(stream, Encoding.UTF8);
 
@@ -245,7 +253,11 @@ public class GameServer : MonoBehaviour
             return;
         }
 
-        int senderId = clientPlayerIds[sender];
+        if (!clientPlayerIds.TryGetValue(sender, out int senderId))
+        {
+            Debug.LogWarning("[GameServer] SHOOT from unknown client ignored.");
+            return;
+        }
         if (senderId != currentPlayerTurn)
         {
             Debug.Log($"[GameServer] SHOOT ignored: not Player {senderId}'s turn.");
