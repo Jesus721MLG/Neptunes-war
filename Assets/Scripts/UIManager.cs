@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// Manages the game's UI canvas screens and grid cell visuals.
@@ -23,9 +24,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Image[] defenseGrid = new Image[Tablero.BoardSize * Tablero.BoardSize];
 
     [Header("HUD")]
-    [SerializeField] private Text turnLabel;
-    [SerializeField] private Text timerLabel;
-    [SerializeField] private Text gameOverLabel;
+    [SerializeField] private TextMeshProUGUI turnLabel;
+    [SerializeField] private TextMeshProUGUI timerLabel;
+    [SerializeField] private TextMeshProUGUI gameOverLabel;
 
     [Header("Shot Result Colors")]
     [SerializeField] private Color hitColor = Color.red;
